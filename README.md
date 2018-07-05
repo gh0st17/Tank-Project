@@ -28,5 +28,7 @@ ESC - Exit.
 - Improved physics models and parameters of vehicles
 - Add tooltips
 - Add sound of box crash
+- New collide processing
+- New start limiter. Limiter move for every 400 meters.
 ### Known bugs
 - The player can fall under the ground. Restart the game.
