@@ -1,8 +1,7 @@
-# Tank-Project
+# TankProject
 SFML and Box2D based game
 
 # Controls:
-
 - W, S - Moving.
 - D - Debug.
 - P - Rescue.
@@ -23,3 +22,8 @@ SFML and Box2D based game
 - New start limiter. Limiter move for every 400 meters.
 ### Known bugs
 - The player can fall under the ground. Restart the game.
+
+# Screenshots:
+![TankProject](https://pp.userapi.com/c848620/v848620932/21ecf/HNO-j5Ad-6E.jpg)
+![TankProject](https://pp.userapi.com/c848620/v848620932/21ee1/70hQrYe_9yc.jpg)
+![TankProject](https://pp.userapi.com/c848620/v848620932/21eea/rX1wz_ZcUR8.jpg)
