@@ -18,6 +18,7 @@ SFML and Box2D based game
 # Changelog v1.5.0
 - New ground randomization. Perlin Noise algorithm. Smoother landscape.
 - New box type. Blue box make gravity like on Moon for 30 seconds. Spawn at 20% chance.
+- Acceleration is expended only when the wheels contact.
 - Ural speed reduced.
 - Sprites loads one time.
 - Zooming interface.
