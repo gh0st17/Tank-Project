@@ -11,19 +11,18 @@ SFML and Box2D based game
 - Space - Handbreak.
 - LShift - Acceleration.
 - RMB - Slowmotion.
+- Page(Up/Down) - Zoom (in/out).
+- Home - Reset zoom.
 - ESC - Exit.
 
-# Changelog v1.4.0
-- Improved ground randomization
-- Improved physics models and parameters of vehicles
-- Add tooltips
-- Add sound of box crash
-- New collide processing
-- New start limiter. Limiter move for every 400 meters.
-### Known bugs
-- The player can fall under the ground. Restart the game.
+# Changelog v1.5.0
+- New ground randomization. Perlin Noise algorithm. Smoother landscape.
+- New box type. Blue box make gravity like on Moon for 30 seconds. Spawn at 20% chance.
+- Ural speed reduced.
+- Sprites loads one time.
+- Zooming interface.
+- Minor known and found bugs are fixed.
 
 # Screenshots:
-![TankProject](https://pp.userapi.com/c848620/v848620932/21ecf/HNO-j5Ad-6E.jpg)
-![TankProject](https://pp.userapi.com/c848620/v848620932/21ee1/70hQrYe_9yc.jpg)
-![TankProject](https://pp.userapi.com/c848620/v848620932/21eea/rX1wz_ZcUR8.jpg)
+![TankProject](https://sun1-6.userapi.com/c834403/v834403210/18ee18/5qtg16VsqyE.jpg)
+![TankProject](https://sun1-3.userapi.com/c834403/v834403210/18ee2a/RVxZI8C0c0o.jpg)
