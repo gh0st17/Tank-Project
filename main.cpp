@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <Box2D/Box2D.h>
+#include <windows.h>
 #include <iostream>
 #include <conio.h>
 #include <sstream>
@@ -8,14 +9,18 @@
 #include <vector>
 #include <ctime>
 #include "world.hpp"
+#include "Centauro120.hpp"
+#include "Ural.hpp"
+#include "Vaz.hpp"
 
 using namespace sf;
 
 int main() {
+	initSprites();
 	ContextSettings settings;
 	settings.antialiasingLevel = 4;
 	settings.depthBits = 8;
-	RenderWindow window(sf::VideoMode(1200, 720, 8), "Tank Project v1.4a | Ghost-17", Style::Close, settings);
+	RenderWindow window(sf::VideoMode(1200, 720, 8), "Tank Project v1.5a | Ghost-17", Style::Close, settings);
 	Image icon; icon.loadFromFile("images/icon.png");
 	window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
@@ -62,11 +67,10 @@ int main() {
 
 	Hud hud = Hud(&window);
 	MyContact *contactListener = new MyContact();
-	player = new Vaz(m_world.getWorld(), &window, hud, contactListener);
+	player = shared_ptr<Tank>(new Vaz(m_world.getWorld(), &window, hud, contactListener));
 	m_world.m_world->SetContactListener(contactListener);
 
-	view.setSize(1200.f, 720.f);
-	view.zoom(ZOOM_FACTOR);
+	view.setSize(ZOOM_FACTOR * 1200.f, ZOOM_FACTOR * 720.f);
 
 	DebugDrawer dd(m_world.getWorld(), &window);
 	bool debug = 0;
@@ -85,7 +89,7 @@ int main() {
 
 		view.setCenter(player->getChassisCenter());
 		window.setView(view);
-		window.draw(m_world.getBack());
+		window.draw(sprites[11]);
 
 		if (Keyboard::isKeyPressed(Keyboard::W)){
 			player->right();
@@ -96,40 +100,53 @@ int main() {
 		else if (Keyboard::isKeyPressed(Keyboard::Space)) player->handBreak();
 		else player->stop();
 
+		if (Keyboard::isKeyPressed(Keyboard::PageDown) && view.getSize().x < 3300) {
+			view.setSize(1.01f * view.getSize());
+			player->getHud()->setScale(1.01f);
+		}
+		else if (Keyboard::isKeyPressed(Keyboard::PageUp) && view.getSize().x > 1500) {
+			view.setSize(0.99f * view.getSize());
+			player->getHud()->setScale(0.99f);
+		}
+		else if (Keyboard::isKeyPressed(Keyboard::Home)) {
+			view.setSize(ZOOM_FACTOR * 1200.f, ZOOM_FACTOR * 720.f);
+			player->getHud()->resetScale();
+		}
+
 		if (Keyboard::isKeyPressed(Keyboard::P)) {
 			player->rescue();
 		}
-		player->setHudPos(view.getCenter());
+		player->setHudSpeed();
 
 		if (Keyboard::isKeyPressed(Keyboard::F1) ||
 			Keyboard::isKeyPressed(Keyboard::F2) ||
 			Keyboard::isKeyPressed(Keyboard::F3)) {
 			b2Vec2 pos = player->getPosition();
+			pos.y -= 3.f;
 			float n20 = player->getN20();
 			m_world.m_world->SetContactListener(NULL);
-			player->destroy();
-			delete player;
 			if (Keyboard::isKeyPressed(Keyboard::F1))
-				player = new Centauro120(m_world.getWorld(), &window, hud, contactListener, pos, n20);
+				player = shared_ptr<Tank>(new Centauro120(m_world.getWorld(), &window, hud, contactListener, pos, n20));
 			else if (Keyboard::isKeyPressed(Keyboard::F2))
-				player = new Ural(m_world.getWorld(), &window, hud, contactListener, pos, n20);
+				player = shared_ptr<Tank>(new Ural(m_world.getWorld(), &window, hud, contactListener, pos, n20));
 			else if (Keyboard::isKeyPressed(Keyboard::F3))
-				player = new Vaz(m_world.getWorld(), &window, hud, contactListener, pos, n20);
+				player = shared_ptr<Tank>(new Vaz(m_world.getWorld(), &window, hud, contactListener, pos, n20));
+			Sleep(500);
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::D)) debug = true; else debug = false;
 
 		dd.setDrawCircle(debug);
 		dd.setDrawPolygon(debug);
-		//dd.setDrawEdge(debug);
+		dd.setDrawEdge(debug);
 
 		//////////Draw///////////////
 		if (Mouse::isButtonPressed(Mouse::Right)){ 
-			m_world.update(player, 120.f, view.getCenter()); 
+			m_world.update(120.f, view.getCenter()); 
 			player->setN20_cosumption(0.5f);
 		}
 		else{
-			m_world.update(player, 60.f, view.getCenter());
+			m_world.update(60.f, view.getCenter());
 			player->setN20_cosumption(1.0f);
 		}
 		Vector2f mouse_pos = window.mapPixelToCoords(sf::Mouse::getPosition(window));

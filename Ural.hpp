@@ -10,17 +10,6 @@ class Ural : public Tank{
 private:
 	const float N20_LIMIT = 900.f;
 	void setBody(b2Vec2 pos){
-		tChassis.loadFromFile("images/tanks/Ural/chassis.png");
-		tWheel.loadFromFile("images/tanks/Ural/wheel.png");
-		tChassis.setSmooth(true);
-		tWheel.setSmooth(true);
-
-		sChassis.setTexture(tChassis);
-		sWheel.setTexture(tWheel);
-
-		sChassis.setOrigin(423, 111 + 40);
-		sWheel.setOrigin(66, 66);
-
 		b2PolygonShape chassis1;
 		b2PolygonShape chassis2;
 		b2PolygonShape chassis3;
@@ -128,20 +117,20 @@ private:
 		bd.position = pos;
 		body = world->CreateBody(&bd);
 		fd.shape = &chassis1;
-		fd.density = 8.f;
+		fd.density = 9.5f;
 		fd.friction = 0.1f;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis2;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis3;
-		fd.density = 1.f;
+		fd.density = 2.5f;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis4;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis5;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis6;
-		fd.density = 1.2f;
+		fd.density = 2.2f;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis7;
 		body->CreateFixture(&fd);
@@ -180,8 +169,8 @@ public:
 		body->SetUserData("body");
 	}*/
 	Ural(b2World * world, RenderWindow * window, Hud &hud, MyContact * contactListener, b2Vec2 pos, float n20_count) : Tank(world, window, hud, 3) {
-		min_speed = -10.5f, max_speed = 55.f;
-		m_hz = 3.75f, m_zeta = 1.f; max_motor_torque = 10000.f;
+		min_speed = -10.5f, max_speed = 50.f;
+		m_hz = 3.75f, m_zeta = 1.f; max_motor_torque = 7200.f;
 		setBody(pos);
 		contactListener = new MyContact();
 		world->SetContactListener(contactListener);
@@ -189,23 +178,34 @@ public:
 		body->SetUserData("body");
 		this->n20_count = n20_count;
 	}
-	~Ural() { cout << "Ural deleted\n"; }
+	~Ural() {
+		destroy();
+		cout << "Ural deleted\n";
+	}
+
+	void destroy(){
+		body->SetUserData("bodyForDel");
+		for (auto wheel : m_wheels)
+			wheel->SetUserData("bodyForDel");
+		for (auto spring : m_springs)
+			spring->SetUserData("jointForDel");
+	}
 
 	void update(){
 		b2Vec2 pos = body->GetPosition();
 		float angle = body->GetAngle() * DEG;
 		sf::Vector2f sfPos(pos.x*SCALE, pos.y*SCALE);
-		sChassis.setPosition(sfPos);
-		sChassis.setRotation(angle);
-		window->draw(sChassis);
+		sprites[3].setPosition(sfPos);
+		sprites[3].setRotation(angle);
+		window->draw(sprites[3]);
 
 		for (unsigned i = 0; i < m_wheels.size(); i++){
 			pos = m_wheels[i]->GetPosition();
 			angle = m_wheels[i]->GetAngle() * DEG;
 			sfPos = sf::Vector2f(pos.x*SCALE, pos.y*SCALE);
-			sWheel.setPosition(sfPos);
-			sWheel.setRotation(angle);
-			window->draw(sWheel);
+			sprites[4].setPosition(sfPos);
+			sprites[4].setRotation(angle);
+			window->draw(sprites[4]);
 		}
 	}
 
@@ -217,7 +217,7 @@ public:
 	void setN20_cosumption(float n20_cosumption){ this->n20_cosumption = n20_cosumption; }
 
 	void n20(){
-		if (n20_count != 0){
+		if (n20_count != 0 && m_contacting){
 			n20_count -= n20_cosumption;
 			for (size_t i = 0; i < m_springs.size(); i++)
 				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 2500.f);
@@ -229,20 +229,14 @@ public:
 		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
-	void setHudPos(Vector2f pos){
-		hud->setBarPos(pos.x + 670, pos.y + 200, getSpeed());
-	}
-
 	Vector2f getChassisCenter(){
-		Vector2f center = sChassis.getPosition();
-		center.x += sChassis.getTextureRect().width - 200;
+		Vector2f center = sprites[3].getPosition();
+		center.x += sprites[3].getTextureRect().width - 200;
 		center.y -= 125;
 		return center;
 	}
 
 	b2Vec2 getPosition(){ return body->GetPosition(); }
-
-	float getSpeed(){ return sqrt(powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).x, 2) + powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).y, 2)); }
 
 	float getAngle(Vector2f &mouseP){ return 0.f; }
 };

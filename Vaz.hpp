@@ -10,21 +10,6 @@ class Vaz : public Tank{
 private:
 	const float N20_LIMIT = 800.f;
 	void setBody(b2Vec2 pos){
-		tChassis.loadFromFile("images/tanks/VAZ2107/chassis.png");
-		tWheel.loadFromFile("images/tanks/VAZ2107/wheel.png");
-		wArc.loadFromFile("images/tanks/VAZ2107/wheelArc.png");
-		tChassis.setSmooth(true);
-		tWheel.setSmooth(true);
-		wArc.setSmooth(true);
-
-		sChassis.setTexture(tChassis);
-		sWheel.setTexture(tWheel);
-		wheelArc.setTexture(wArc);
-
-		sChassis.setOrigin(263, 65);
-		wheelArc.setOrigin(263, 65);
-		sWheel.setOrigin(36, 36);
-
 		b2PolygonShape chassis1;
 		b2PolygonShape chassis2;
 		b2PolygonShape chassis3;
@@ -185,7 +170,7 @@ public:
 		n20_count = N20_LIMIT;
 		min_speed = -10.5f, max_speed = 50.f;
 		m_hz = 5.0f, m_zeta = 1.f; max_motor_torque = 5200.f;
-		setBody(b2Vec2(15, -3));
+		setBody(b2Vec2(15, -10));
 		contactListener = new MyContact();
 		world->SetContactListener(contactListener);
 	}
@@ -199,7 +184,17 @@ public:
 		world->SetContactListener(contactListener);
 		this->n20_count = n20_count;
 	}
-	~Vaz() { cout << "Vaz deleted\n"; }
+	~Vaz() {
+		destroy(); cout << "Vaz deleted\n";
+	}
+
+	void destroy(){
+		body->SetUserData("bodyForDel");
+		for (auto wheel : m_wheels)
+			wheel->SetUserData("bodyForDel");
+		for (auto spring : m_springs)
+			spring->SetUserData("jointForDel");
+	}
 
 	void update(){
 #ifdef debContact
@@ -211,21 +206,21 @@ public:
 		b2Vec2 pos = body->GetPosition();
 		float angle = body->GetAngle() * DEG;
 		sf::Vector2f sfPos(pos.x*SCALE, pos.y*SCALE);
-		sChassis.setPosition(sfPos);
-		sChassis.setRotation(angle);
-		wheelArc.setPosition(sfPos);
-		wheelArc.setRotation(angle);
-		window->draw(wheelArc);
+		sprites[0].setPosition(sfPos);
+		sprites[0].setRotation(angle);
+		sprites[2].setPosition(sfPos);
+		sprites[2].setRotation(angle);
+		window->draw(sprites[2]);
 
 		for (unsigned i = 0; i < m_wheels.size(); i++){
 			pos = m_wheels[i]->GetPosition();
 			angle = m_wheels[i]->GetAngle() * DEG;
 			sfPos = sf::Vector2f(pos.x*SCALE, pos.y*SCALE);
-			sWheel.setPosition(sfPos);
-			sWheel.setRotation(angle);
-			window->draw(sWheel);
+			sprites[1].setPosition(sfPos);
+			sprites[1].setRotation(angle);
+			window->draw(sprites[1]);
 		}
-		window->draw(sChassis);
+		window->draw(sprites[0]);
 	}
 
 	void updateHud(float &time, Vector2f viewCenter, Vector2f mouse_pos){
@@ -236,10 +231,10 @@ public:
 	void setN20_cosumption(float n20_cosumption){ this->n20_cosumption = n20_cosumption; }
 
 	void n20(){
-		if (n20_count != 0){
+		if (n20_count != 0 && m_contacting){
 			n20_count -= n20_cosumption;
 			for (size_t i = 0; i < m_springs.size(); i++)
-				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 2500.f);
+				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 2000.f);
 		}
 	}
 
@@ -248,20 +243,14 @@ public:
 		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
-	void setHudPos(Vector2f pos){
-		hud->setBarPos(pos.x + 670, pos.y + 200, getSpeed());
-	}
-
 	Vector2f getChassisCenter(){
-		Vector2f center = sChassis.getPosition();
-		center.x += sChassis.getTextureRect().width - 200;
+		Vector2f center = sprites[0].getPosition();
+		center.x += sprites[0].getTextureRect().width + 200;
 		center.y -= 125;
 		return center;
 	}
 
 	b2Vec2 getPosition(){ return body->GetPosition(); }
-
-	float getSpeed(){ return sqrt(powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).x, 2) + powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).y, 2)); }
 
 	float getAngle(Vector2f &mouseP){ return 0.f; }
 };

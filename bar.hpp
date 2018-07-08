@@ -50,4 +50,12 @@ public:
 	void setY(float f){ y = f; }
 	void setWidth(float f){ w = f; }
 	void setHeight(float f){ h = f; }
+	void setScale(float factor){
+		backRect.setScale(factor * backRect.getScale());
+		colorRect.setScale(factor * colorRect.getScale());
+	}
+	void resetScale(){
+		backRect.setScale(1.f, 1.f);
+		colorRect.setScale(1.f, 1.f);
+	}
 };

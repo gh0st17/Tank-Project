@@ -2,14 +2,12 @@
 #include <Box2D/Box2D.h>
 #include <vector>
 #include <ctime>
-#include "global.hpp"
-#include "hud.hpp"
-#include "DebugDrawer.hpp"
 #include "bullet.hpp"
+#include "hud.hpp"
 
 using namespace sf;
 using namespace std;
-#define debContact
+//#define debContact
 
 class Tank {
 public:
@@ -18,7 +16,6 @@ public:
 		Body,
 		Gun
 	};
-	vector<b2Body*> boxDel;
 protected:
 	bool m_contacting = false;
 #ifdef debContact
@@ -29,17 +26,21 @@ protected:
 	b2Body * body;
 	float32 m_hz, m_zeta, max_speed, min_speed, max_motor_torque;
 	vector<b2Body*> m_wheels = vector<b2Body*>(0);
-	vector<b2WheelJoint*> m_springs = vector<b2WheelJoint*>(0);
-	Texture tChassis, tWheel, wArc, tCab, tGun;
-	Sprite wheelArc, sCab, sChassis, sWheel, sGun;
+	vector<b2WheelJoint*> m_springs = vector<b2WheelJoint*>(0); // (0)chassis (0)wheel (0)wArc (0)cab (0)gun
 	b2RevoluteJointDef rjd;
 	float n20_count;
-	const float N20_LIMIT = 0;
+	const float N20_LIMIT = 0.f;
 	Hud * hud;
-
 public:
 	Tank(b2World * world, RenderWindow * window, Hud &hud, unsigned wCount);
+	~Tank(){
+	}
+
+#ifdef debContact
 	void startContact(ContactType type, string contactData);
+#else
+	void startContact();
+#endif
 	void endContact();
 	void incBrokenBoxes(){ hud->incBoxesBroken(); }
 	virtual void setBody(b2Vec2 pos){};
@@ -70,9 +71,8 @@ public:
 	virtual void n20(){};
 	virtual void destroy(){
 		world->DestroyBody(body);
-		for (auto wheel : m_wheels){
+		for (auto wheel : m_wheels)
 			world->DestroyBody(wheel);
-		}
 	}
 	void stop_n20(){
 		for (auto spring : m_springs)
@@ -88,7 +88,9 @@ public:
 	virtual void setGunAngle(Vector2f mouseP){};
 	virtual void addN20(float amount){};
 	float getN20(){ return n20_count; };
-	virtual void setHudPos(Vector2f pos){};
+	virtual void setHudSpeed() final {
+		hud->setBarPos(getSpeed());
+	}
 	virtual Vector2f getChassisCenter() = 0;
 	virtual b2Vec2 getPosition() = 0;
 	virtual std::vector<b2Vec2> getWheelsPosition(){
@@ -99,14 +101,15 @@ public:
 		}
 		return wPos;
 	}
-	virtual float getSpeed() = 0;
+	virtual float getSpeed() final { return sqrt(powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).x, 2) + powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).y, 2)); }
 	virtual float getAngle(Vector2f &mouseP) = 0;
 	void destroyBox(b2Body * box){
-		boxDel.push_back(box);
+		box->SetUserData("bodyForDel");
 		addN20(20.f);
 		incBrokenBoxes();
 	}
-	Hud * getHud(){ return hud; }
+	virtual Hud * getHud() final { return hud; }
+	b2Body * getBody(){ return body; }
 };
 
 Tank::Tank(b2World * world, RenderWindow * window, Hud &hud, unsigned wCount){
@@ -116,13 +119,15 @@ Tank::Tank(b2World * world, RenderWindow * window, Hud &hud, unsigned wCount){
 	m_wheels.resize(wCount);
 	m_springs.resize(wCount);
 }
+#ifdef debContact
 void Tank::startContact(ContactType type, string contactData) {
 	m_contacting = true;
-#ifdef debContact
 	if (type == Body) this->contactType = "body ";
 	if (type == Wheel) this->contactType = "wheel ";
 	if (type == Gun) this->contactType = "gun ";
 	this->contactBody = contactData;
-#endif
 }
+#else
+void Tank::startContact() {	m_contacting = true; }
+#endif
 void Tank::endContact() { m_contacting = false; }

@@ -12,29 +12,6 @@ private:
 	b2Body* b_gun;
 	b2Vec2 axis2;
 	void setBody(b2Vec2 pos){
-		tChassis.loadFromFile("images/tanks/Cent120/chassis.png");
-		tWheel.loadFromFile("images/tanks/Cent120/wheel.png");
-		wArc.loadFromFile("images/tanks/Cent120/wheelArc.png");
-		tCab.loadFromFile("images/tanks/Cent120/cab.png");
-		tGun.loadFromFile("images/tanks/Cent120/gun.png");
-		tChassis.setSmooth(true);
-		tWheel.setSmooth(true);
-		wArc.setSmooth(true);
-		tCab.setSmooth(true);
-		tGun.setSmooth(true);
-
-		wheelArc.setTexture(wArc);
-		sCab.setTexture(tCab);
-		sChassis.setTexture(tChassis);
-		sWheel.setTexture(tWheel);
-		sGun.setTexture(tGun);
-
-		sChassis.setOrigin(720 / 2 + 60, 141 / 2 - 28);
-		sCab.setOrigin(720 / 2 + 60, 141 / 2 + 75);
-		sGun.setOrigin(20, 80);
-		wheelArc.setOrigin(720 / 2 + 2, 141 / 2 - 50);
-		sWheel.setOrigin(54, 54);
-
 		b2PolygonShape chassis;
 		b2Vec2 vertices[8];
 		vertices[0].Set(-12.7f, 3.2f);
@@ -156,46 +133,49 @@ public:
 		body->SetBullet(true);
 		if (this->n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
-	~Centauro120() { cout << "Centauro120 deleted\n"; }
+	~Centauro120() {
+		destroy(); cout << "Centauro120 deleted\n";
+	}
 
 	void destroy(){
-		world->DestroyBody(body);
-		world->DestroyBody(b_gun);
-		for (unsigned i = 0; i < m_wheels.size(); i++){
-			world->DestroyBody(m_wheels[i]);
-		}
+		body->SetUserData("bodyForDel");
+		b_gun->SetUserData("bodyForDel");
+		for (auto wheel : m_wheels)
+			wheel->SetUserData("bodyForDel");
+		for (auto spring : m_springs)
+			spring->SetUserData("jointForDel");
 	}
 
 	void update(){
 		b2Vec2 pos = body->GetPosition();
 		float angle = body->GetAngle() * DEG;
 		sf::Vector2f sfPos(pos.x*SCALE, pos.y*SCALE);
-		sChassis.setPosition(sfPos);
-		sChassis.setRotation(angle);
-		wheelArc.setPosition(sfPos);
-		wheelArc.setRotation(angle);
-		sCab.setPosition(sfPos);
-		sCab.setRotation(angle);
-		window->draw(sChassis);
+		sprites[5].setPosition(sfPos);
+		sprites[5].setRotation(angle);
+		sprites[7].setPosition(sfPos);
+		sprites[7].setRotation(angle);
+		sprites[8].setPosition(sfPos);
+		sprites[8].setRotation(angle);
+		window->draw(sprites[5]);
 
 		for (unsigned i = 0; i < m_wheels.size(); i++){
 			pos = m_wheels[i]->GetPosition();
 			angle = m_wheels[i]->GetAngle() * DEG;
 			sfPos = sf::Vector2f(pos.x*SCALE, pos.y*SCALE);
-			sWheel.setPosition(sfPos);
-			sWheel.setRotation(angle);
-			window->draw(sWheel);
+			sprites[6].setPosition(sfPos);
+			sprites[6].setRotation(angle);
+			window->draw(sprites[6]);
 		}
 
 		pos = b_gun->GetPosition();
 		sfPos = sf::Vector2f(pos.x*SCALE, pos.y*SCALE);
 		angle = b_gun->GetAngle() * DEG;
-		sGun.setPosition(sfPos);
-		sGun.setRotation(angle);
+		sprites[9].setPosition(sfPos);
+		sprites[9].setRotation(angle);
 
-		window->draw(wheelArc);
-		window->draw(sGun);
-		window->draw(sCab);
+		window->draw(sprites[9]);
+		window->draw(sprites[7]);
+		window->draw(sprites[8]);
 		//window->draw(rect);
 
 
@@ -207,7 +187,7 @@ public:
 
 	void updateHud(float &time, Vector2f viewCenter, Vector2f mouse_pos){
 		hud->update(N20_LIMIT, n20_count);
-		hud->updateDebug(time, viewCenter, "Angle: " + to_string(getAngle(mouse_pos)) + '\n');
+		hud->updateDebug(time, viewCenter, "\nAngle: " + to_string(getAngle(mouse_pos)));
 	}
 
 	void setN20_cosumption(float n20_cosumption){ this->n20_cosumption = n20_cosumption; }
@@ -230,7 +210,7 @@ public:
 	}
 
 	void n20(){
-		if (n20_count != 0){
+		if (n20_count != 0 && m_contacting){
 			n20_count -= n20_cosumption;
 			for (size_t i = 0; i < m_springs.size(); i++)
 				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 1250.f);
@@ -242,19 +222,13 @@ public:
 		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
-	void setHudPos(Vector2f pos){
-		hud->setBarPos(pos.x + 670, pos.y + 200, getSpeed());
-	}
-
 	Vector2f getChassisCenter(){
-		Vector2f center = sChassis.getPosition();
-		center.x += sChassis.getTextureRect().width;
+		Vector2f center = sprites[5].getPosition();
+		center.x += sprites[5].getTextureRect().width;
 		center.y -= 125;
 		return center;
 	}
 
 	b2Vec2 getPosition(){ return body->GetPosition(); }
-
-	float getSpeed(){ return sqrt(powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).x, 2) + powf(body->GetLinearVelocityFromLocalPoint(body->GetLocalCenter()).y, 2)); }
 };
 
