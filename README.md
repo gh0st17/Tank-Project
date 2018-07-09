@@ -1,7 +1,7 @@
 # TankProject
 SFML and Box2D based game
 
-# Controls:
+# Controls
 - W, S - Moving.
 - D - Debug.
 - P - Rescue.
@@ -25,6 +25,6 @@ SFML and Box2D based game
 - Minor known and found bugs are fixed.
 - SFML updated to 2.5.0.
 
-# Screenshots:
+# Screenshots
 ![TankProject](https://sun1-6.userapi.com/c834403/v834403210/18ee18/5qtg16VsqyE.jpg)
 ![TankProject](https://sun1-3.userapi.com/c834403/v834403210/18ee2a/RVxZI8C0c0o.jpg)
