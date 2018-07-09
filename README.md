@@ -23,6 +23,7 @@ SFML and Box2D based game
 - Sprites loads one time.
 - Zooming interface.
 - Minor known and found bugs are fixed.
+- SFML updated to 2.5.0.
 
 # Screenshots:
 ![TankProject](https://sun1-6.userapi.com/c834403/v834403210/18ee18/5qtg16VsqyE.jpg)
