@@ -1,5 +1,5 @@
 #include <SFML/Graphics.hpp>
-#include <Box2D/Box2D.h>
+#include <Box2D.h>
 #include <vector>
 #include <ctime>
 #include "bullet.hpp"
@@ -91,6 +91,7 @@ public:
 	virtual void setHudSpeed() final {
 		hud->setBarPos(getSpeed());
 	}
+	virtual Vector2f getChassisOffsetView() = 0;
 	virtual Vector2f getChassisCenter() = 0;
 	virtual b2Vec2 getPosition() = 0;
 	virtual std::vector<b2Vec2> getWheelsPosition(){

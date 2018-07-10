@@ -1,5 +1,5 @@
 ﻿#include <SFML/Graphics.hpp>
-#include <Box2D/Box2D.h>
+#include <Box2D.h>
 #include <vector>
 #include <math.h>
 #include <iostream>
@@ -222,11 +222,15 @@ public:
 		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
-	Vector2f getChassisCenter(){
+	Vector2f getChassisOffsetView(){
 		Vector2f center = sprites[5].getPosition();
 		center.x += sprites[5].getTextureRect().width;
 		center.y -= 125;
 		return center;
+	}
+
+	Vector2f getChassisCenter(){
+		return sprites[5].getPosition();
 	}
 
 	b2Vec2 getPosition(){ return body->GetPosition(); }

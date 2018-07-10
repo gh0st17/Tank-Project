@@ -1,10 +1,33 @@
 #include <SFML/Graphics.hpp>
-#include <Box2D/Box2D.h>
+#include <Box2D.h>
 #include "global.hpp"
+
 
 class World {
 private:
-	unsigned py_i = 0;
+	const unsigned w = 1200, h = 720;
+	const string shaderData = \
+		"uniform vec2 storm_position;"\
+		"uniform float storm_total_radius;"\
+		"uniform float storm_inner_radius;"\
+		"void main(){"\
+			"vec4 vertex = gl_ModelViewMatrix * gl_Vertex;"\
+			"vec2 offset = vertex.xy - storm_position;"\
+			"float len = length(offset);"\
+			"if (len < storm_total_radius) {"\
+				"float push_distance = storm_inner_radius + len / storm_total_radius * (storm_total_radius - storm_inner_radius);"\
+				"vertex.xy = storm_position + normalize(offset) * push_distance;"\
+			"}"\
+			"gl_Position = gl_ProjectionMatrix * vertex;"\
+			"gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;"\
+			"gl_FrontColor = gl_Color;"\
+		"}";
+	Shader shader;
+	RenderStates states;
+	VertexArray m_points;
+	vector<Vector2f> m_xy;
+
+	unsigned py_i = 0, s_i = 1, draw_pressed = 50;
 	float step = 0, last;
 	float32 x = 0, y = 1;
 	b2Body* start;
@@ -21,10 +44,12 @@ private:
 	Font font;
 	Text meterText;
 	bool startUpd = 0, waitForDelete = false;
+	sf::Clock clok;
 
 	void addVertex(float &x, float dx, float &y, float y2, Color color); // Vertexes for drawing
 	float Noise(float x, float y); // Perlin Noise algorithm
 	float SmoothNoise_2D(float x, float y);
+	void drawVertex(Vector2f * center);
 
 public:
 	vector<b2Vec2> py; // Position coords for platform
@@ -45,8 +70,25 @@ public:
 		b2Fixture* startf = start->CreateFixture(&startSh, 0);
 		bdef.position.Set(0, 0);
 		font.loadFromFile("res/SF-Pro-Display-Bold.otf");
-		meterText.setFont(font); meterText.setCharacterSize(19 * (unsigned)ZOOM_FACTOR); meterText.setScale(ZOOM_FACTOR, ZOOM_FACTOR); meterText.setOutlineThickness(2.0f);
+		meterText.setFont(font);
+		meterText.setCharacterSize(19 * (unsigned)ZOOM_FACTOR);
+		meterText.setScale(ZOOM_FACTOR, ZOOM_FACTOR);
+		meterText.setOutlineThickness(2.0f);
 
+
+		m_points.setPrimitiveType(Points);
+		for (int i = 0; i < 30000; ++i)
+		{
+			m_xy.push_back(Vector2f(static_cast<float>(rand() % ((unsigned)(w * 2.75))), static_cast<float>(rand() % ((unsigned)(h * 2.75)))));
+			vector<Color> colors;
+			colors.push_back(Color(255, 0, 0));
+			colors.push_back(Color(0, 255, 0));
+			colors.push_back(Color(0, 0, 255));
+			colors.push_back(Color(255, 255, 255));
+			m_points.append(Vertex(Vector2f(view.getCenter().x, view.getCenter().y), colors[rand() % 4]));
+		}
+		shader.loadFromMemory(shaderData, Shader::Vertex);
+		states.shader = &shader;
 	}
 	~World(){}
 
@@ -75,7 +117,7 @@ public:
 		const float w = 30.f, offsetX = 1.f, offsetY = 0.4f;
 		for (size_t c = 0; c < count; c++)
 			for (size_t i = 0; i < 3; i++) genBoxes(grGen, (startPos.x + (i / SCALE * w)) * SCALE,
-				(startPos.y - 20.f) * SCALE,
+				startPos.y * SCALE,
 				w, w, b2_dynamicBody);
 	}
 	void generateMap(bool first = false){
@@ -95,24 +137,16 @@ public:
 		if (first) last = x; // last for start limiter
 		else last = x - 200;
 
-		try {
-			if (ground.size() > 2) { // if patrs of ground > 2 then delete first
-				m_world->DestroyBody(ground.front());
-				ground.erase(ground.begin());
-				for (unsigned i = 0; i < 20; i++) groundArr.erase(groundArr.begin());
-			}
-		}
-		catch (exception e){
-			cerr << e.what() << endl;
-		}
-		catch (exception_ptr e){
-			cerr << "execep ptr" << endl;
+		if (ground.size() > 2) { // if patrs of ground > 2 then delete first
+			m_world->DestroyBody(ground.front());
+			ground.erase(ground.begin());
+			for (unsigned i = 0; i < 20; i++) groundArr.erase(groundArr.begin());
 		}
 
 		ground.back() = m_world->CreateBody(&bdefGr); // Add part of new ground to vector
 		for (int k = 0; k < 4; k++) { // Generate logic
 			for (int i = 0; i < 5; i++) {
-				y2 = SmoothNoise_2D(rand() % 57, rand() % 15731) * 25;
+				y2 = SmoothNoise_2D(rand() % 57, rand() % 15731) * 25.f;
 
 				if (fabs(y2 - y) > 3.5f) { // if differents between last and next y > 3.5f
 					if (y2 > y)		 while (fabs(y2 - y) > 3.5f) y2 -= .5f;
@@ -127,7 +161,7 @@ public:
 				ground.back()->CreateFixture(&fdef);
 				y = y2; // Set last x y
 				x += dx;
-				if ((unsigned)x % 150 == 0) genBlocks(grGen, 4, b2Vec2(x, y));
+				if ((unsigned)x % 150 == 0) genBlocks(grGen, 4, b2Vec2(x, y - 3.f));
 			}
 			if (k == 0) py.push_back(b2Vec2(x + 10, y - 5));
 		}
@@ -148,6 +182,32 @@ public:
 		ground.push_back(NULL); // Add elem for next ground
 	}
 	b2World * getWorld() { return m_world; }
+	void drawBackground(){
+		bool draw = false;
+		if (Keyboard::isKeyPressed(Keyboard::W)){
+			if (Keyboard::isKeyPressed(Keyboard::LShift)) draw = true;
+			else draw = false;
+		}
+		float radius;
+		Vector2f centerp = player->getChassisCenter();
+
+		if (draw && draw_pressed < 120) draw_pressed++;
+		if (!draw && draw_pressed > 50) draw_pressed--;
+
+		radius = 400 + cos(clok.getElapsedTime().asSeconds()) * (draw_pressed + player->getSpeed());
+		shader.setUniform("storm_inner_radius", radius / 4);
+		shader.setUniform("storm_position", centerp);
+		shader.setUniform("storm_total_radius", radius);
+		Vector2f center = view.getCenter();
+		Vector2f center2 = center;
+		center.x += (w * s_i) - centerp.x / 5;
+		center.y += h * 2.75f / 2;
+		drawVertex(&center);
+		center.x += w * 2.75f;
+		drawVertex(&center);
+		if (centerp.x + (center2.x + (w * 2.75f / 2) - centerp.x) > center.x) s_i++;
+	}
+
 	void update(float freq, Vector2f _view){
 		// Platform
 		float theta = 0.025f + step;
@@ -158,7 +218,7 @@ public:
 			m_platformBody2->SetLinearVelocity(60 * (targetPos - m_platformBody2->GetPosition()));
 		}
 
-		if (x - player->getPosition().x < 50.f) generateMap();
+		if (x - player->getPosition().x < 100.f) generateMap();
 
 		for (b2Body* it = m_world->GetBodyList(); it != 0; it = it->GetNext()){
 			for (b2Fixture* f = it->GetFixtureList(); f != 0; f = f->GetNext()){ // Destuction bodies
@@ -198,27 +258,27 @@ public:
 
 			/* Drawing */
 			if (it->GetUserData() == "box") {
+				sprites[13].setPosition(sfPos);
+				sprites[13].setRotation(angle);
+				window->draw(sprites[13]);
+			}
+
+			if (it->GetUserData() == "gravityBox") {
 				sprites[14].setPosition(sfPos);
 				sprites[14].setRotation(angle);
 				window->draw(sprites[14]);
 			}
 
-			if (it->GetUserData() == "gravityBox") {
+			if (it->GetUserData() == "platform") {
 				sprites[15].setPosition(sfPos);
 				sprites[15].setRotation(angle);
 				window->draw(sprites[15]);
 			}
 
-			if (it->GetUserData() == "platform") {
+			if (it->GetUserData() == "start") {
 				sprites[16].setPosition(sfPos);
 				sprites[16].setRotation(angle);
 				window->draw(sprites[16]);
-			}
-
-			if (it->GetUserData() == "start") {
-				sprites[17].setPosition(sfPos);
-				sprites[17].setRotation(angle);
-				window->draw(sprites[17]);
 			}
 		}
 
@@ -245,7 +305,7 @@ public:
 		}
 		if (player->getPosition().y - y > 25.f){
 			b2Vec2 p_pos = player->getPosition();
-			p_pos.y = y - 10.f;
+			p_pos.y = y - 25.f;
 			player->getBody()->SetTransform(p_pos, 0);
 		}
 		m_world->Step(1 / freq, 8, 3);
@@ -271,4 +331,10 @@ float World::SmoothNoise_2D(float x, float y){
 	float sides = (Noise(x - 1, y) + Noise(x + 1, y) + Noise(x, y - 1) + Noise(x, y + 1)) / 8;
 	float center = Noise(x, y) / 2;
 	return corners + sides + center;
+}
+void World::drawVertex(Vector2f * center){
+	for (unsigned i = 0; i < m_points.getVertexCount(); i++){
+		m_points[i].position = *center - m_xy[i];
+	}
+	window->draw(m_points, states);
 }

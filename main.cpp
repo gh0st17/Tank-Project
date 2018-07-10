@@ -1,5 +1,5 @@
 #include <SFML/Graphics.hpp>
-#include <Box2D/Box2D.h>
+#include <Box2D.h>
 #include <windows.h>
 #include <iostream>
 #include <conio.h>
@@ -20,7 +20,7 @@ int main() {
 	ContextSettings settings;
 	settings.antialiasingLevel = 4;
 	settings.depthBits = 8;
-	RenderWindow window(sf::VideoMode(1200, 720, 8), "Tank Project v1.5a | Ghost-17", Style::Close, settings);
+	RenderWindow window(sf::VideoMode(1200, 720, 8), "Tank Project v1.5.1a | Ghost-17", Style::Close, settings);
 	Image icon; icon.loadFromFile("images/icon.png");
 	window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
@@ -28,42 +28,6 @@ int main() {
 	m_world.generateMap(true);
 
 	window.setFramerateLimit(70);
-
-	// Bridge
-	/*{
-		int32 N = 10;
-		b2PolygonShape shape;
-		shape.SetAsBox(2.0f, 0.125f);
-
-		b2FixtureDef fd;
-		fd.shape = &shape;
-		fd.density = 15.0f;
-		fd.friction = 1.f;
-		fd.restitution = 0.f;
-
-		b2RevoluteJointDef jd;
-
-		b2Body* prevBody = ground;
-		for (int32 i = 0; i < N; ++i)
-		{
-		b2BodyDef bd;
-		bd.type = b2_dynamicBody;
-		bd.position.Set(150.0f + 4.0f * i, hs[9] + 20.f);
-		b2Body* body = world.CreateBody(&bd);
-		body->SetUserData("bridge");
-		body->CreateFixture(&fd);
-
-		b2Vec2 anchor(151.0f + 4.0f * i, hs[9] + 20.f);
-		jd.Initialize(prevBody, body, anchor);
-		world.CreateJoint(&jd);
-
-		prevBody = body;
-		}
-
-		b2Vec2 anchor(150.0f + 4.0f * N, hs[10] + 20.f);
-		jd.Initialize(prevBody, ground, anchor);
-		world.CreateJoint(&jd);
-		}*/
 
 	Hud hud = Hud(&window);
 	MyContact *contactListener = new MyContact();
@@ -87,9 +51,9 @@ int main() {
 		while (window.pollEvent(e)) if (e.type == Event::Closed) window.close();
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) window.close();
 
-		view.setCenter(player->getChassisCenter());
+		view.setCenter(player->getChassisOffsetView());
 		window.setView(view);
-		window.draw(sprites[11]);
+		m_world.drawBackground();
 
 		if (Keyboard::isKeyPressed(Keyboard::W)){
 			player->right();

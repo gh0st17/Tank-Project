@@ -5,11 +5,11 @@ using namespace std;
 using namespace sf;
 
 std::string imgFolder = "images/";
-vector<Texture> textures = vector<Texture>(18, Texture());
-vector<Sprite> sprites = vector<Sprite>(18, Sprite());
+vector<Texture> textures = vector<Texture>(17, Texture());
+vector<Sprite> sprites = vector<Sprite>(17, Sprite());
 
 void initSprites(){
-	for (unsigned i = 0; i < 18; i++) textures[i] = Texture();
+	for (unsigned i = 0; i < 17; i++) textures[i] = Texture();
 	textures[0].loadFromFile(imgFolder + "tanks/VAZ2107/chassis.png");
 	textures[1].loadFromFile(imgFolder + "tanks/VAZ2107/wheel.png");
 	textures[2].loadFromFile(imgFolder + "tanks/VAZ2107/wheelArc.png");
@@ -21,14 +21,13 @@ void initSprites(){
 	textures[8].loadFromFile(imgFolder + "tanks/Cent120/cab.png");
 	textures[9].loadFromFile(imgFolder + "tanks/Cent120/gun.png");
 	textures[10].loadFromFile(imgFolder + "hud/arrow.png");
-	textures[11].loadFromFile(imgFolder + "hud/back.jpg");
-	textures[12].loadFromFile(imgFolder + "hud/message.png");
-	textures[13].loadFromFile(imgFolder + "hud/speedometer.png");
-	textures[14].loadFromFile(imgFolder + "world/box.jpg");
-	textures[15].loadFromFile(imgFolder + "world/box2.jpg");
-	textures[16].loadFromFile(imgFolder + "world/platform.jpg");
-	textures[17].loadFromFile(imgFolder + "world/start.jpg");
-	for (unsigned i = 0; i < 18; i++) {
+	textures[11].loadFromFile(imgFolder + "hud/message.png");
+	textures[12].loadFromFile(imgFolder + "hud/speedometer.png");
+	textures[13].loadFromFile(imgFolder + "world/box.jpg");
+	textures[14].loadFromFile(imgFolder + "world/box2.jpg");
+	textures[15].loadFromFile(imgFolder + "world/platform.jpg");
+	textures[16].loadFromFile(imgFolder + "world/start.jpg");
+	for (unsigned i = 0; i < 17; i++) {
 		textures[i].setSmooth(true);
 		sprites[i].setTexture(textures[i]);
 	}
@@ -47,12 +46,10 @@ void initSprites(){
 	sprites[9].setOrigin(20, 80);
 
 	sprites[10].setOrigin(252, 252);
-	sprites[11].setScale(ZOOM_FACTOR, ZOOM_FACTOR);
-	sprites[12].setOrigin(600, 350);
+	sprites[11].setOrigin(600, 350);
 
+	sprites[13].setOrigin(30, 30);
 	sprites[14].setOrigin(30, 30);
-	sprites[15].setOrigin(30, 30);
-	sprites[16].setOrigin(300, 30);
-	sprites[17].setOrigin(60, 750);
-
+	sprites[15].setOrigin(300, 30);
+	sprites[16].setOrigin(60, 750);
 }

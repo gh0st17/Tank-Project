@@ -1,5 +1,5 @@
 #include <SFML/Graphics.hpp>
-#include <Box2D/Box2D.h>
+#include <Box2D.h>
 #include <vector>
 #include <math.h>
 #include <iostream>
@@ -127,7 +127,7 @@ private:
 		bd.userData = "body";
 		body = world->CreateBody(&bd);
 		fd.shape = &chassis1;
-		fd.density = 5.f;
+		fd.density = 8.f;
 		fd.friction = 0.1f;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis2;
@@ -137,7 +137,7 @@ private:
 		fd.shape = &chassis4;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis5;
-		fd.density = 8.f;
+		fd.density = 6.f;
 		body->CreateFixture(&fd);
 		fd.shape = &chassis6;
 		body->CreateFixture(&fd);
@@ -243,11 +243,15 @@ public:
 		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
-	Vector2f getChassisCenter(){
+	Vector2f getChassisOffsetView(){
 		Vector2f center = sprites[0].getPosition();
 		center.x += sprites[0].getTextureRect().width + 200;
 		center.y -= 125;
 		return center;
+	}
+
+	Vector2f getChassisCenter(){
+		return sprites[0].getPosition();
 	}
 
 	b2Vec2 getPosition(){ return body->GetPosition(); }
