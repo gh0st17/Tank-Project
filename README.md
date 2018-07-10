@@ -16,7 +16,7 @@ SFML and Box2D based game
 - ESC - Exit.
 
 # Changelog v1.5.1
-- New background. Like 
+- New background.
 - Center of mass of VAZ is shifted forward.
 - Box2D updated to latest version.
 - Minor fixes.
