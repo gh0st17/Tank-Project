@@ -20,7 +20,7 @@ int main() {
 	ContextSettings settings;
 	settings.antialiasingLevel = 4;
 	settings.depthBits = 8;
-	RenderWindow window(sf::VideoMode(1200, 720, 8), "Tank Project v1.5.1a | Ghost-17", Style::Close, settings);
+	RenderWindow window(sf::VideoMode(1200, 720, 8), "Tank Project v1.5.2a | Ghost-17", Style::Close, settings);
 	Image icon; icon.loadFromFile("images/icon.png");
 	window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
