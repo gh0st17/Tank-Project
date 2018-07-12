@@ -8,7 +8,6 @@ using namespace sf;
 
 class Centauro120 : public Tank{
 private:
-	const float N20_LIMIT = 750.f;
 	b2Body* b_gun;
 	b2Vec2 axis2;
 	void setBody(b2Vec2 pos){
@@ -105,8 +104,7 @@ private:
 			m_springs[i] = (b2WheelJoint*)world->CreateJoint(&jd);
 		}
 	}
-
-	float n20_cosumption = 1.f;
+	Vector2f mouse_pos;
 	//RectangleShape rect;
 
 public:
@@ -125,13 +123,15 @@ public:
 		n20_count = n20;
 		min_speed = -8.5f, max_speed = 34.f;
 		m_hz = 4.25f, m_zeta = 1.75f; max_motor_torque = 8500.f;
+		n20addition = 1250.f;
 		//rect.setSize(Vector2f(5, 5));
 		//rect.setFillColor(Color::Red);
 		setBody(pos);
 		contactListener = new MyContact();
 		world->SetContactListener(contactListener);
 		body->SetBullet(true);
-		if (this->n20_count > N20_LIMIT) n20_count = N20_LIMIT;
+		if (this->n20_count > getN20limit()) n20_count = getN20limit();
+		setN20limit(750.f);
 	}
 	~Centauro120() {
 		destroy(); cout << "Centauro120 deleted\n";
@@ -147,6 +147,8 @@ public:
 	}
 
 	void update(){
+		mouse_pos = window->mapPixelToCoords(Mouse::getPosition(*window));
+		setGunAngle(mouse_pos);
 		b2Vec2 pos = body->GetPosition();
 		float angle = body->GetAngle() * DEG;
 		sf::Vector2f sfPos(pos.x*SCALE, pos.y*SCALE);
@@ -185,20 +187,20 @@ public:
 
 	}
 
-	void updateHud(float &time, Vector2f viewCenter, Vector2f mouse_pos){
-		hud->update(N20_LIMIT, n20_count);
+	void updateHud(float &time, Vector2f viewCenter){
+		hud->update(getN20limit(), n20_count);
 		hud->updateDebug(time, viewCenter, "\nAngle: " + to_string(getAngle(mouse_pos)));
 	}
-
-	void setN20_cosumption(float n20_cosumption){ this->n20_cosumption = n20_cosumption; }
 
 	void setGunAngle(Vector2f mouseP){
 		float32 targetAngle = getAngle(mouseP);
 		b2JointEdge *j = b_gun->GetJointList();
 		b2RevoluteJoint *r = (b2RevoluteJoint *)j->joint;
 		float32 rjdAngle = r->GetJointAngle() * DEG;
-		if (roundf(rjdAngle) > roundf(targetAngle)) 		r->SetMotorSpeed(-0.5f);
-		else if (roundf(rjdAngle) < roundf(targetAngle)) r->SetMotorSpeed(0.5f);
+		if (roundf(rjdAngle) > roundf(targetAngle)) 	
+			r->SetMotorSpeed(-0.5f);
+		else if (roundf(rjdAngle) < roundf(targetAngle))
+			r->SetMotorSpeed( 0.5f);
 		else r->SetMotorSpeed(0.f);
 	}
 
@@ -207,19 +209,6 @@ public:
 		b2Vec2 vec = rjd.bodyB->GetPosition() + rjd.localAnchorA;
 		a = atan2f(mouseP.x - vec.x * SCALE, mouseP.y - vec.y * SCALE) * DEG - 90;
 		return a + (body->GetAngle() * DEG);
-	}
-
-	void n20(){
-		if (n20_count != 0 && m_contacting){
-			n20_count -= n20_cosumption;
-			for (size_t i = 0; i < m_springs.size(); i++)
-				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 1250.f);
-		}
-	}
-
-	void addN20(float amount){
-		n20_count += amount;
-		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
 	Vector2f getChassisOffsetView(){
@@ -232,7 +221,5 @@ public:
 	Vector2f getChassisCenter(){
 		return sprites[5].getPosition();
 	}
-
-	b2Vec2 getPosition(){ return body->GetPosition(); }
 };
 

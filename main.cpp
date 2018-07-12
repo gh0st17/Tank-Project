@@ -113,13 +113,11 @@ int main() {
 			m_world.update(60.f, view.getCenter());
 			player->setN20_cosumption(1.0f);
 		}
-		Vector2f mouse_pos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-		player->setGunAngle(mouse_pos);
 		player->update();
 		dd.update();
 
 		time = clock.getElapsedTime().asSeconds();
-		player->updateHud(time, view.getCenter(), mouse_pos);
+		player->updateHud(time, view.getCenter());
 		clock.restart().asSeconds();
 		window.display();
 	}

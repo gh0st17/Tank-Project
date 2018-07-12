@@ -67,6 +67,7 @@ private:
 	}
 
 public:
+	bool p_draw = false, b_draw = false, g_draw = false, gr_draw;
 	Hud(RenderWindow * window){
 		this->window = window;
 		font.loadFromFile("res/SF-Pro-Display-Bold.otf");
@@ -97,8 +98,12 @@ public:
 	}
 	void updateDebug(float &time, Vector2f viewCenter, string str){
 		string grav = "";
-		if (msg.gravity && 30.f - (clock() - msg.timeGravity) / CLOCKS_PER_SEC > 0)
-			grav = "\nGravity remain: " + to_string(30.f - (clock() - msg.timeGravity) / CLOCKS_PER_SEC);
+		float remain = 30.f - (clock() - msg.timeGravity) / CLOCKS_PER_SEC;
+		if (msg.gravity && remain > 0){
+			std::stringstream ss;
+			ss << roundf(remain * 100.f) / 100;
+			grav = "\nGravity remain in " + ss.str();
+		}
 		fps.setString("FPS: " + to_string((unsigned)(1.0f / time)) + "\nBoxes: " +
 			to_string(brokenBoxes) + str + grav);
 		fps.setPosition((viewCenter.x - view.getSize().x / 2) + (10 * factor), (viewCenter.y - view.getSize().y / 2) - (10 * factor));
@@ -114,8 +119,6 @@ public:
 		boxesText.setPosition((center + offset).x + 205, (center + offset).y + 326);
 	}
 	void incBoxesBroken(){ brokenBoxes++; }
-
-	bool p_draw = false, b_draw = false, g_draw = false, gr_draw;
 
 	void setScale(float factor){
 		fps.setScale(factor * fps.getScale());

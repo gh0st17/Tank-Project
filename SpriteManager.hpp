@@ -4,7 +4,7 @@
 using namespace std;
 using namespace sf;
 
-std::string imgFolder = "images/";
+string imgFolder = "images/";
 vector<Texture> textures = vector<Texture>(17, Texture());
 vector<Sprite> sprites = vector<Sprite>(17, Sprite());
 

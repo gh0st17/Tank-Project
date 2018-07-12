@@ -43,7 +43,8 @@ public:
 
 	float getPercentage(){ return percentage; }
 	void setPercentage(float p){ 
-		percentage = p; }
+		percentage = p; 
+	}
 	bool getVisible(){ return visible; }
 	void setVisible(bool v){ visible = v; }
 	void setX(float f){ x = f; }

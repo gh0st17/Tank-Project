@@ -8,7 +8,6 @@ using namespace sf;
 
 class Ural : public Tank{
 private:
-	const float N20_LIMIT = 900.f;
 	void setBody(b2Vec2 pos){
 		b2PolygonShape chassis1;
 		b2PolygonShape chassis2;
@@ -155,8 +154,6 @@ private:
 		}
 	}
 
-	float n20_cosumption = 1.f;
-
 public:
 /*	Ural(b2World * world, RenderWindow * window, Hud &hud, MyContact * contactListener) : Tank(world, window, hud, 3) {
 		n20_count = N20_LIMIT;
@@ -171,16 +168,17 @@ public:
 	Ural(b2World * world, RenderWindow * window, Hud &hud, MyContact * contactListener, b2Vec2 pos, float n20_count) : Tank(world, window, hud, 3) {
 		min_speed = -10.5f, max_speed = 50.f;
 		m_hz = 3.75f, m_zeta = 1.f; max_motor_torque = 7200.f;
+		n20addition = 2100.f;
 		setBody(pos);
 		contactListener = new MyContact();
 		world->SetContactListener(contactListener);
 		body->SetBullet(true);
 		body->SetUserData("body");
 		this->n20_count = n20_count;
+		setN20limit(900.f);
 	}
 	~Ural() {
-		destroy();
-		cout << "Ural deleted\n";
+		destroy(); cout << "Ural deleted\n";
 	}
 
 	void destroy(){
@@ -209,24 +207,9 @@ public:
 		}
 	}
 
-	void updateHud(float &time, Vector2f viewCenter, Vector2f mouse_pos){
-		hud->update(N20_LIMIT, n20_count);
+	void updateHud(float &time, Vector2f viewCenter){
+		hud->update(getN20limit(), n20_count);
 		hud->updateDebug(time, viewCenter, "");
-	}
-
-	void setN20_cosumption(float n20_cosumption){ this->n20_cosumption = n20_cosumption; }
-
-	void n20(){
-		if (n20_count != 0 && m_contacting){
-			n20_count -= n20_cosumption;
-			for (size_t i = 0; i < m_springs.size(); i++)
-				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 2500.f);
-		}
-	}
-
-	void addN20(float amount){
-		n20_count += amount;
-		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
 	Vector2f getChassisOffsetView(){
@@ -239,9 +222,5 @@ public:
 	Vector2f getChassisCenter(){
 		return sprites[3].getPosition();
 	}
-
-	b2Vec2 getPosition(){ return body->GetPosition(); }
-
-	float getAngle(Vector2f &mouseP){ return 0.f; }
 };
 

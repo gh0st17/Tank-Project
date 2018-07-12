@@ -8,7 +8,6 @@ using namespace sf;
 
 class Vaz : public Tank{
 private:
-	const float N20_LIMIT = 800.f;
 	void setBody(b2Vec2 pos){
 		b2PolygonShape chassis1;
 		b2PolygonShape chassis2;
@@ -163,26 +162,28 @@ private:
 		body->SetBullet(true);
 	}
 
-	float n20_cosumption = 1.f;
-
 public:
 	Vaz(b2World * world, RenderWindow * window, Hud &hud, MyContact * contactListener) : Tank(world, window, hud, 2) {
-		n20_count = N20_LIMIT;
+		n20_count = 800.f;
 		min_speed = -10.5f, max_speed = 50.f;
 		m_hz = 5.0f, m_zeta = 1.f; max_motor_torque = 5200.f;
+		n20addition = 1850.f;
 		setBody(b2Vec2(15, -10));
 		contactListener = new MyContact();
 		world->SetContactListener(contactListener);
+		setN20limit(800.f);
 	}
 	Vaz(b2World * world, RenderWindow * window, Hud &hud, MyContact * contactListener, b2Vec2 pos, float n20_count) : Tank(world, window, hud, 2) {
 		min_speed = -10.5f, max_speed = 50.f;
 		m_hz = 5.0f, m_zeta = 1.f; max_motor_torque = 5200.f;
+		n20addition = 1850.f;
 		m_wheels.resize(2);
 		m_springs.resize(2);
 		setBody(pos);
 		contactListener = new MyContact();
 		world->SetContactListener(contactListener);
 		this->n20_count = n20_count;
+		setN20limit(800.f);
 	}
 	~Vaz() {
 		destroy(); cout << "Vaz deleted\n";
@@ -223,24 +224,9 @@ public:
 		window->draw(sprites[0]);
 	}
 
-	void updateHud(float &time, Vector2f viewCenter, Vector2f mouse_pos){
-		hud->update(N20_LIMIT, n20_count);
+	void updateHud(float &time, Vector2f viewCenter){
+		hud->update(getN20limit(), n20_count);
 		hud->updateDebug(time, viewCenter, "");
-	}
-
-	void setN20_cosumption(float n20_cosumption){ this->n20_cosumption = n20_cosumption; }
-
-	void n20(){
-		if (n20_count != 0 && m_contacting){
-			n20_count -= n20_cosumption;
-			for (size_t i = 0; i < m_springs.size(); i++)
-				m_springs[i]->SetMaxMotorTorque(max_motor_torque + 2000.f);
-		}
-	}
-
-	void addN20(float amount){
-		n20_count += amount;
-		if (n20_count > N20_LIMIT) n20_count = N20_LIMIT;
 	}
 
 	Vector2f getChassisOffsetView(){
@@ -253,9 +239,5 @@ public:
 	Vector2f getChassisCenter(){
 		return sprites[0].getPosition();
 	}
-
-	b2Vec2 getPosition(){ return body->GetPosition(); }
-
-	float getAngle(Vector2f &mouseP){ return 0.f; }
 };
 

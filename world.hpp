@@ -25,16 +25,17 @@ private:
 	Shader shader;
 	RenderStates states;
 	VertexArray m_points;
+	Vector2f backPos;
 	vector<Vector2f> m_xy;
 
 	unsigned py_i = 0, s_i = 1, draw_pressed = 50;
-	float step = 0, last;
+	float step = 0, last, prevMoveBack = 0, nextMoveBack = 0;
 	float32 x = 0, y = 1;
 	b2Body* start;
 	b2PolygonShape startSh;
 	b2BodyDef bdef;
 	b2BodyDef bdefGr;
-	b2FixtureDef fdef;
+	b2FixtureDef fdef, boxfdef;
 	b2EdgeShape shape;
 	std::vector<VertexArray> groundArr;
 	RenderWindow * window;
@@ -43,13 +44,17 @@ private:
 	b2Body* m_platformBody2;
 	Font font;
 	Text meterText;
-	bool startUpd = 0, waitForDelete = false;
+	bool startUpd = 0, waitForDelete = false, moveBack = true;
 	sf::Clock clok;
 
 	void addVertex(float &x, float dx, float &y, float y2, Color color); // Vertexes for drawing
 	float Noise(float x, float y); // Perlin Noise algorithm
 	float SmoothNoise_2D(float x, float y);
 	void drawVertex(Vector2f * center);
+	void initBoxfdef();
+	void initBackground();
+	void drawBodies(b2Body * it);
+	void drawGround();
 
 public:
 	vector<b2Vec2> py; // Position coords for platform
@@ -75,38 +80,21 @@ public:
 		meterText.setScale(ZOOM_FACTOR, ZOOM_FACTOR);
 		meterText.setOutlineThickness(2.0f);
 
-
-		m_points.setPrimitiveType(Points);
-		for (int i = 0; i < 30000; ++i)
-		{
-			m_xy.push_back(Vector2f(static_cast<float>(rand() % ((unsigned)(w * 2.75))), static_cast<float>(rand() % ((unsigned)(h * 2.75)))));
-			vector<Color> colors;
-			colors.push_back(Color(255, 0, 0));
-			colors.push_back(Color(0, 255, 0));
-			colors.push_back(Color(0, 0, 255));
-			colors.push_back(Color(255, 255, 255));
-			m_points.append(Vertex(Vector2f(view.getCenter().x, view.getCenter().y), colors[rand() % 4]));
-		}
-		shader.loadFromMemory(shaderData, Shader::Vertex);
-		states.shader = &shader;
+		initBoxfdef();
+		initBackground();
 	}
 	~World(){}
 
 	void genBoxes(bool &grGen, float x, float y, float w, float h, b2BodyType type = b2_staticBody) {
 		srand(time(NULL));
-		b2PolygonShape gr;
-		gr.SetAsBox(w / SCALE, h / SCALE);
+		b2PolygonShape boxShape;
+		boxShape.SetAsBox(w / SCALE, h / SCALE);
 		bdef.type = type;
 		bdef.position.Set(x / SCALE, y / SCALE);
-		b2FixtureDef fd;
-		fd.density = 3.5f;
-		fd.friction = 0.7f;
-		fd.restitution = 0.05f;
-		fd.userData = "boxFixture";
-		fd.shape = &gr;
+		boxfdef.shape = &boxShape;
 
 		b2Body *b_ground = m_world->CreateBody(&bdef);
-		b_ground->CreateFixture(&fd);
+		b_ground->CreateFixture(&boxfdef);
 		b_ground->SetUserData("box");
 		if (rand() % 101 >= 80 && !grGen){
 			b_ground->SetUserData("gravityBox");
@@ -116,7 +104,7 @@ public:
 	void genBlocks(bool &grGen, unsigned count, b2Vec2 startPos) {
 		const float w = 30.f, offsetX = 1.f, offsetY = 0.4f;
 		for (size_t c = 0; c < count; c++)
-			for (size_t i = 0; i < 3; i++) genBoxes(grGen, (startPos.x + (i / SCALE * w)) * SCALE,
+			for (size_t i = 0; i < count; i++) genBoxes(grGen, (startPos.x + (i / SCALE * w)) * SCALE,
 				startPos.y * SCALE,
 				w, w, b2_dynamicBody);
 	}
@@ -161,7 +149,7 @@ public:
 				ground.back()->CreateFixture(&fdef);
 				y = y2; // Set last x y
 				x += dx;
-				if ((unsigned)x % 150 == 0) genBlocks(grGen, 4, b2Vec2(x, y - 3.f));
+				if ((unsigned)x % 150 == 0) genBlocks(grGen, 3, b2Vec2(x, y - 3.f));
 			}
 			if (k == 0) py.push_back(b2Vec2(x + 10, y - 5));
 		}
@@ -195,20 +183,25 @@ public:
 		if (!draw && draw_pressed > 50) draw_pressed--;
 
 		radius = 400 + cos(clok.getElapsedTime().asSeconds()) * (draw_pressed + player->getSpeed());
-		shader.setUniform("storm_inner_radius", radius / 4);
+		shader.setUniform("storm_inner_radius", radius / 5);
 		shader.setUniform("storm_position", centerp);
 		shader.setUniform("storm_total_radius", radius);
+
 		Vector2f center = view.getCenter();
 		Vector2f center2 = center;
-		center.x += (w * s_i) - centerp.x / 5;
+		center.x += ((w << 1) * s_i) - centerp.x / 5;
 		center.y += h * 2.75f / 2;
+		drawVertex(new Vector2f(center.x - (w << 1), center.y));
 		drawVertex(&center);
-		center.x += w * 2.75f;
+		center.x += w << 1;
 		drawVertex(&center);
-		if (centerp.x + (center2.x + (w * 2.75f / 2) - centerp.x) > center.x) s_i++;
+		if (centerp.x + (center2.x + w - centerp.x) > center.x) s_i++;
+		center.x += w << 1;
+		drawVertex(&center);
 	}
 
 	void update(float freq, Vector2f _view){
+		m_world->Step(1 / freq, 8, 3);
 		// Platform
 		float theta = 0.025f + step;
 		step += 0.015f;
@@ -252,50 +245,11 @@ public:
 				}
 			}
 			sprites[11].setPosition(_view.x - 850 * ZOOM_FACTOR, _view.y - 531 * ZOOM_FACTOR);
-			b2Vec2 pos = it->GetPosition();
-			float angle = it->GetAngle() * DEG;
-			sf::Vector2f sfPos(pos.x*SCALE, pos.y*SCALE);
-
-			/* Drawing */
-			if (it->GetUserData() == "box") {
-				sprites[13].setPosition(sfPos);
-				sprites[13].setRotation(angle);
-				window->draw(sprites[13]);
-			}
-
-			if (it->GetUserData() == "gravityBox") {
-				sprites[14].setPosition(sfPos);
-				sprites[14].setRotation(angle);
-				window->draw(sprites[14]);
-			}
-
-			if (it->GetUserData() == "platform") {
-				sprites[15].setPosition(sfPos);
-				sprites[15].setRotation(angle);
-				window->draw(sprites[15]);
-			}
-
-			if (it->GetUserData() == "start") {
-				sprites[16].setPosition(sfPos);
-				sprites[16].setRotation(angle);
-				window->draw(sprites[16]);
-			}
+			drawBodies(it);
 		}
 
-		for (auto grArr : groundArr) {
-			window->draw(grArr);
-			Vector2f v1, v2;
-			v1 = grArr[0].position;
-			v2 = grArr[1].position;
-			cs.setPoint(0, v1);
-			cs.setPoint(1, v2);
-			v1.y += 1500;
-			v2.y += 1500;
-			cs.setPoint(3, v1);
-			cs.setPoint(2, v2);
-			window->draw(cs);
-		}
-		window->draw(meterText);
+		drawGround();
+
 		if (msg.gravity){
 			m_world->SetGravity(b2Vec2(0.f, 4.6f));
 			if ((double)(clock() - msg.timeGravity) / CLOCKS_PER_SEC > 30){
@@ -308,7 +262,6 @@ public:
 			p_pos.y = y - 25.f;
 			player->getBody()->SetTransform(p_pos, 0);
 		}
-		m_world->Step(1 / freq, 8, 3);
 		for (b2Joint * j = m_world->GetJointList(); j != 0; j = j->GetNext())
 			if (j->GetUserData() == "jointForDel") m_world->DestroyJoint(j);
 	}
@@ -321,20 +274,94 @@ void World::addVertex(float &x, float dx, float &y, float y2, Color color){
 	groundArr[groundArr.size() - 1][0].color = color;
 	groundArr[groundArr.size() - 1][1].color = color;
 }
+
 float World::Noise(float x, float y){
-	int n = x + y * 57;
+	unsigned __int64 n = x + y * 57;
 	n = (n << 13) ^ n;
 	return (1.0f - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0f);
 }
+
 float World::SmoothNoise_2D(float x, float y){
 	float corners = (Noise(x - 1, y - 1) + Noise(x + 1, y - 1) + Noise(x - 1, y + 1) + Noise(x + 1, y + 1)) / 16;
 	float sides = (Noise(x - 1, y) + Noise(x + 1, y) + Noise(x, y - 1) + Noise(x, y + 1)) / 8;
 	float center = Noise(x, y) / 2;
 	return corners + sides + center;
 }
+
 void World::drawVertex(Vector2f * center){
 	for (unsigned i = 0; i < m_points.getVertexCount(); i++){
 		m_points[i].position = *center - m_xy[i];
 	}
 	window->draw(m_points, states);
+}
+
+void World::initBoxfdef(){
+	boxfdef.density		= 3.f;
+	boxfdef.friction	= .5f;
+	boxfdef.restitution = 0.f;
+	boxfdef.userData = "boxFixture";
+}
+
+void World::initBackground(){
+	m_points.setPrimitiveType(Points);
+	srand(time(NULL));
+	for (int i = 0; i < 1750; ++i){
+		m_xy.push_back(Vector2f(rand() % ((unsigned)(w * 2.f)), rand() % ((unsigned)(h * 2.75f))));
+		vector<Color> colors;
+		colors.push_back(Color(255, 0, 0));
+		colors.push_back(Color(0, 255, 0));
+		colors.push_back(Color(0, 0, 255));
+		colors.push_back(Color(255, 255, 255));
+		m_points.append(Vertex(Vector2f(view.getCenter().x, view.getCenter().y), colors[rand() % 4]));
+	}
+	shader.loadFromMemory(shaderData, Shader::Vertex);
+	states.shader = &shader;
+}
+
+void World::drawBodies(b2Body * it){
+	b2Vec2 pos = it->GetPosition();
+	float angle = it->GetAngle() * DEG;
+	sf::Vector2f sfPos(pos.x*SCALE, pos.y*SCALE);
+
+	/* Drawing */
+	if (it->GetUserData() == "box") {
+		sprites[13].setPosition(sfPos);
+		sprites[13].setRotation(angle);
+		window->draw(sprites[13]);
+	}
+
+	if (it->GetUserData() == "gravityBox") {
+		sprites[14].setPosition(sfPos);
+		sprites[14].setRotation(angle);
+		window->draw(sprites[14]);
+	}
+
+	if (it->GetUserData() == "platform") {
+		sprites[15].setPosition(sfPos);
+		sprites[15].setRotation(angle);
+		window->draw(sprites[15]);
+	}
+
+	if (it->GetUserData() == "start") {
+		sprites[16].setPosition(sfPos);
+		sprites[16].setRotation(angle);
+		window->draw(sprites[16]);
+	}
+}
+
+void World::drawGround(){
+	for (auto grArr : groundArr) {
+		window->draw(grArr);
+		Vector2f v1, v2;
+		v1 = grArr[0].position;
+		v2 = grArr[1].position;
+		cs.setPoint(0, v1);
+		cs.setPoint(1, v2);
+		v1.y += 1500;
+		v2.y += 1500;
+		cs.setPoint(3, v1);
+		cs.setPoint(2, v2);
+		window->draw(cs);
+	}
+	window->draw(meterText);
 }
