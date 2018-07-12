@@ -16,9 +16,7 @@ SFML and Box2D based game
 - ESC - Exit.
 
 # Changelog v1.5.1
-- New background.
-
-P.S. The shader from the SFML example was used.
+- New background. PS The shader from the SFML example was used.
 - Center of mass of VAZ is shifted forward.
 - Box2D updated to latest version.
 - Minor fixes.
